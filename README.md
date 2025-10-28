@@ -1,76 +1,43 @@
-# BST code in Java
+# SpringBoot login flow
 
 ```java
-class Node {
-    int data;
-    Node left, right;
-    Node(int data) {
-        this.data = data;
-        left = right = null;
-    }
-}
+package com.example.LoginApp.controller;
 
-class BST {
-    Node root;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import com.example.LoginApp.service.UserService;
+import com.example.LoginApp.model.User;
 
-    Node insert(Node root, int data) {
-        if (root == null) return new Node(data);
-        if (data < root.data) root.left = insert(root.left, data);
-        else if (data > root.data) root.right = insert(root.right, data);
-        return root;
-    }
+@RestController
+@RequestMapping("/api")
+public class LoginController {
 
-    void inorder(Node root) {
-        if (root != null) {
-            inorder(root.left);
-            System.out.print(root.data + " ");
-            inorder(root.right);
+    @Autowired
+    private UserService userService;
+
+    @GetMapping("/login")
+    public ResponseEntity<String> loginUser(@RequestBody User user) {
+        User existingUser = userService.findByUsername(user.getUsername());
+        if (existingUser == null) {
+            return ResponseEntity.badRequest().body("User not found");
+        }
+
+        if (existingUser.getPassword() == user.getPassword()) {  // WRONG comparison
+            return ResponseEntity.ok("Login success");
+        } else {
+            return ResponseEntity.ok("Invalid credentials");
         }
     }
 
-    Node search(Node root, int key) {
-        if (root == null || root.data == key) return root;
-        if (key < root.data) return search(root.left, key);
-        return search(root.right, key);
+    @PostMapping("/register")
+    public ResponseEntity<String> registerUser(User user) {
+        userService.saveUser(user);
+        return ResponseEntity.ok("User registered successfully!");
     }
 
-    Node delete(Node root, int key) {
-        if (root == null) return root;
-        if (key < root.data) root.left = delete(root.left, key);
-        else if (key > root.data) root.right = delete(root.right, key);
-        else {
-            if (root.left == null) return root.right;
-            else if (root.right == null) return root.left;
-            root.data = minValue(root.right);
-            root.right = delete(root.right, root.data);
-        }
-        return root;
     }
 
-    int minValue(Node root) {
-        int min = root.data;
-        while (root.left != null) {
-            min = root.left.data;
-            root = root.left;
-        }
-        return min;
-    }
-
-    public static void main(String[] args) {
-        BST tree = new BST();
-        tree.root = tree.insert(tree.root, 50);
-        tree.insert(tree.root, 30);
-        tree.insert(tree.root, 20);
-        tree.insert(tree.root, 40);
-        tree.insert(tree.root, 70);
-        tree.insert(tree.root, 60);
-        tree.insert(tree.root, 80);
-        tree.inorder(tree.root);
-        System.out.println();
-        tree.root = tree.delete(tree.root, 20);
-        tree.inorder(tree.root);
-    }
-}
 
 
 ```
