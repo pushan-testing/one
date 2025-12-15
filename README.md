@@ -1,18 +1,16 @@
 ```java
+
 // File: src/main/java/com/example/utils/MathUtils.java
 
 package com.example.utils;
 
-/**
- * Utility class for basic mathematical operations.
- */
 public class MathUtils {
 
-    private MathUtils() {
-        // Prevent instantiation
-    }
+    // Missing private constructor (minor issue)
+    public MathUtils() {}
 
     public static int add(int a, int b) {
+        System.out.println("Adding numbers"); // ❌ unnecessary log
         return a + b;
     }
 
@@ -20,8 +18,11 @@ public class MathUtils {
         return a - b;
     }
 
-    public static int multiply(int a, int b) {
+    // ❌ Method name unclear, no documentation
+    public static int calc(int a, int b) {
         return a * b;
     }
 }
+
+
 ```
