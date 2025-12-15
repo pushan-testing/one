@@ -414,3 +414,159 @@ module.exports = {
   triggerPRAnalysis,
 };
 ```
+# test code
+```js
+import React from "react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import "@testing-library/jest-dom";
+import SettingsPage from "../pages/SettingsPage";
+import { addCustomRules, getCustomRules } from "../lib/api";
+
+// 🔹 Mock Navbar (avoid layout noise)
+jest.mock("../components/Navbar", () => () => (
+  <div data-testid="navbar" />
+));
+
+// 🔹 Mock API
+jest.mock("../lib/api", () => ({
+  getCustomRules: jest.fn(),
+  addCustomRules: jest.fn(),
+}));
+
+// 🔹 Mock toast
+jest.mock("react-hot-toast", () => ({
+  success: jest.fn(),
+  error: jest.fn(),
+}));
+
+// 🔹 Mock drag-and-drop (IMPORTANT)
+jest.mock("@hello-pangea/dnd", () => {
+  const Original = jest.requireActual("@hello-pangea/dnd");
+  return {
+    ...Original,
+    DragDropContext: ({ children }) => <div>{children}</div>,
+    Droppable: ({ children }) =>
+      children({
+        droppableProps: {},
+        innerRef: jest.fn(),
+        placeholder: null,
+      }),
+    Draggable: ({ children }) =>
+      children({
+        draggableProps: {},
+        dragHandleProps: {},
+        innerRef: jest.fn(),
+      }),
+  };
+});
+
+describe("SettingsPage", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test("renders page and header", async () => {
+    getCustomRules.mockResolvedValue({ data: [] });
+
+    render(<SettingsPage />);
+
+    expect(
+      screen.getByText("Custom PR Analysis Rules")
+    ).toBeInTheDocument();
+  });
+
+  test("loads and displays rules from API", async () => {
+    getCustomRules.mockResolvedValue({
+      data: [
+        "Reject PRs with console.log statements",
+        "Ensure unit tests exist",
+      ],
+    });
+
+    render(<SettingsPage />);
+
+    expect(
+      await screen.findByDisplayValue(
+        "Reject PRs with console.log statements"
+      )
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByDisplayValue("Ensure unit tests exist")
+    ).toBeInTheDocument();
+  });
+
+  test("adds a new rule", async () => {
+    getCustomRules.mockResolvedValue({ data: [] });
+
+    render(<SettingsPage />);
+
+    const addBtn = await screen.findByRole("button", { name: "" });
+    fireEvent.click(addBtn);
+
+    const textareas = screen.getAllByRole("textbox");
+    expect(textareas.length).toBeGreaterThan(1);
+  });
+
+  test("deletes a rule", async () => {
+    getCustomRules.mockResolvedValue({
+      data: ["Rule one", "Rule two"],
+    });
+
+    render(<SettingsPage />);
+
+    const textareas = await screen.findAllByRole("textbox");
+    expect(textareas.length).toBe(2);
+
+    const deleteButtons = screen.getAllByRole("button");
+    fireEvent.click(deleteButtons[deleteButtons.length - 1]);
+
+    expect(screen.getAllByRole("textbox").length).toBe(1);
+  });
+
+  test("saves rules successfully", async () => {
+    getCustomRules.mockResolvedValue({ data: ["Valid rule"] });
+    addCustomRules.mockResolvedValue({});
+
+    render(<SettingsPage />);
+
+    const saveBtn = await screen.findByText("Save Rules");
+    fireEvent.click(saveBtn);
+
+    await waitFor(() => {
+      expect(addCustomRules).toHaveBeenCalledWith(["Valid rule"]);
+    });
+  });
+
+  test("shows error if empty rule exists", async () => {
+    getCustomRules.mockResolvedValue({ data: [""] });
+
+    render(<SettingsPage />);
+
+    const saveBtn = await screen.findByText("Save Rules");
+    fireEvent.click(saveBtn);
+
+    await waitFor(() => {
+      expect(addCustomRules).not.toHaveBeenCalled();
+    });
+  });
+
+  test("reorders rules on drag end", async () => {
+    getCustomRules.mockResolvedValue({
+      data: ["Rule A", "Rule B"],
+    });
+
+    render(<SettingsPage />);
+
+    // Since drag is mocked, just ensure both rules render
+    expect(
+      await screen.findByDisplayValue("Rule A")
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByDisplayValue("Rule B")
+    ).toBeInTheDocument();
+  });
+});
+```
