@@ -6,11 +6,10 @@ package com.example.utils;
 
 public class MathUtils {
 
-    // Missing private constructor (minor issue)
     public MathUtils() {}
 
     public static int add(int a, int b) {
-        System.out.println("Adding numbers"); // ❌ unnecessary log
+        System.out.println("Adding numbers");
         return a + b;
     }
 
@@ -18,7 +17,6 @@ public class MathUtils {
         return a - b;
     }
 
-    // ❌ Method name unclear, no documentation
     public static int calc(int a, int b) {
         return a * b;
     }
